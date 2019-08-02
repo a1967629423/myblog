@@ -1,9 +1,8 @@
 import Vue from 'vue';
 import Router from 'vue-router';
 import Home from './views/Home.vue';
-import Page404 from './views/404Page.vue';
+//import Page404 from './views/404Page.vue';
 Vue.use(Router);
-
 export default new Router({
   mode: 'history',
   base: process.env.BASE_URL,
@@ -22,9 +21,9 @@ export default new Router({
       component: () => import(/* webpackChunkName: "about" */ './views/About.vue'),
     },
     {
-      path: '*' ,
-      name: '404' ,
-      component: Page404,
+      path: '*',
+      name: '404',
+      component: res=>require(['./views/404Page.vue'],(comp)=>{res(comp)}),
     },
   ],
 });

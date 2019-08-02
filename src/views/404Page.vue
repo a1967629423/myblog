@@ -18,7 +18,7 @@
     </div>
 </template>
 <style lang="scss">
-$baseFontColor: #828282;
+$baseFontColor: rgb(130,130,130);
 $descFontColor: $baseFontColor * rgb(1.35,1.01,1.01);
 @mixin text-shadow($range:4px)
 {
@@ -29,7 +29,6 @@ $descFontColor: $baseFontColor * rgb(1.35,1.01,1.01);
     padding: 6px 20px;
     margin: 6px;
     border: 1px solid $descFontColor;
-    text-decoration: none;
     border-radius: $radius;
 }
 a , a:link , a:visited
@@ -78,6 +77,10 @@ body {
             @include radius-button();
             width: 120px;
             margin: 0 auto;
+            a
+            {
+                text-decoration: none;
+            }
         }
         .introduce
         {
