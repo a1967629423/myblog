@@ -15,6 +15,5 @@ import router from 'vue-router';
   },
 })
 export default class Home extends Vue {
-  
 }
 </script>
