@@ -7,7 +7,7 @@
             </div>
         </div>
         <div class="index-zuo">
-        <a href=""><img :src="require('D:/d/demo/myblog/src/assets/images/icon/zuo.png')"></a>
+        <a href=""><img src="../assets/images/icon/zuo.png"></a>
         </div>
     </div>
 </template>
