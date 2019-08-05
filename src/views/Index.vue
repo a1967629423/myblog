@@ -6,12 +6,18 @@
                 Welcome
             </div>
         </div>
+        <div class="index-zuo">
+        <a href=""><img :src="require('D:/d/demo/myblog/src/assets/images/icon/zuo.png')"></a>
+        </div>
     </div>
 </template>
 <style lang="scss">
 .index-content
 {
     text-align: center;
+    .index-zuo{
+        left:100%;
+    }
     .index-head
     {
         position: absolute;
