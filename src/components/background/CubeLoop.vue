@@ -12,34 +12,38 @@
 }
 </style>
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
-import * as THREE from 'three';
-import { MStateMachine } from '../../utile/StateMachine';
-import {VignettingEffect} from '../../assets/shader/Vignetting';
+import { Component, Vue } from 'vue-property-decorator'
+import * as THREE from 'three'
+import { MStateMachine, StateEvents } from '../../utile/StateMachine'
+import { VignettingEffect } from '../../assets/shader/Vignetting'
+const { State, StateMachine } = MStateMachine
+declare module '../../utile/StateMachine' {
+    export interface StateEvents {
+        update: Function
+    }
+}
 class PopBox {
     public BoxMesh: THREE.Mesh
-    public upState = new MStateMachine.State()
-    public downState = new MStateMachine.State()
-    public bottom_idleState = new MStateMachine.State()
-    public top_idleState = new MStateMachine.State()
-    public SM: MStateMachine.StateMachine = new MStateMachine.StateMachine(
-        this.bottom_idleState
-    )
-    time: number = Math.random()*Math.PI*2;
-    Rx: number = (Math.random()*0.9+0.1);
-    Ry: number = (Math.random()*0.9+0.1);
-    Rz: number = (Math.random()*0.9+0.1);
-    timestep: number = (Math.random()*0.9+0.1);
+    public upState = new State()
+    public downState = new State()
+    public bottom_idleState = new State()
+    public top_idleState = new State()
+    public SM = new StateMachine(this.bottom_idleState)
+    time: number = Math.random() * Math.PI * 2
+    Rx: number = Math.random() * 0.9 + 0.1
+    Ry: number = Math.random() * 0.9 + 0.1
+    Rz: number = Math.random() * 0.9 + 0.1
+    timestep: number = Math.random() * 0.9 + 0.1
     constructor(mesh: THREE.Mesh) {
         this.BoxMesh = mesh
-        this.upState.on('update', (handle, dt: number) => {
+        this.upState.on('update', (dt: number) => {
             this.BoxMesh.position.z -= dt * 2
             if (this.BoxMesh.position.z <= -2) {
                 this.BoxMesh.position.z = -2
                 this.SM.changeState(this.top_idleState)
             }
         })
-        this.downState.on('update', (handle, dt: number) => {
+        this.downState.on('update', (dt: number) => {
             this.BoxMesh.position.z += dt * 2
             if (this.BoxMesh.position.z >= 0) {
                 this.BoxMesh.position.z = 0
@@ -62,19 +66,20 @@ class PopBox {
             this.SM.changeState(this.upState)
         }
     }
-    
+
     update(dt: number) {
         //this.SM.emit('update', dt)
         if (
             this.BoxMesh.morphTargetInfluences &&
             this.BoxMesh.morphTargetInfluences.length > 0
         ) {
-            this.BoxMesh.morphTargetInfluences[0] = ((Math.sin(this.time)+1)/2)*0.92+0.08;
+            this.BoxMesh.morphTargetInfluences[0] =
+                ((Math.sin(this.time) + 1) / 2) * 0.92 + 0.08
         }
-        this.time += dt*this.timestep;
-        this.BoxMesh.rotateX(dt*this.Rx);
-        this.BoxMesh.rotateY(dt*this.Ry);
-        this.BoxMesh.rotateZ(dt*this.Rz);
+        this.time += dt * this.timestep
+        this.BoxMesh.rotateX(dt * this.Rx)
+        this.BoxMesh.rotateY(dt * this.Ry)
+        this.BoxMesh.rotateZ(dt * this.Rz)
     }
 }
 class Background {
@@ -90,14 +95,14 @@ class Background {
     Canvas: HTMLCanvasElement
     // LinesCtrl
     CtrlOne: THREE.Object3D | null = null
-    Boxs: PopBox[] = [];
-    Vignetting:VignettingEffect | null = null;
+    Boxs: PopBox[] = []
+    Vignetting: VignettingEffect | null = null
     FrameFunc: (dt: DOMHighResTimeStamp) => void = this.Frame.bind(this)
     Init() {
         this.InitCamera()
         this.Renderer = new THREE.WebGLRenderer({ canvas: this.Canvas })
         this.Renderer.setClearColor(0xffffff)
-        this.InitEffect();
+        this.InitEffect()
         this.InitObject()
         this.InitLight()
         requestAnimationFrame(this.FrameFunc)
@@ -113,10 +118,9 @@ class Background {
         //     }
         // }, 1000)
     }
-    InitEffect()
-    {
-        if(this.Renderer)
-        this.Vignetting = new VignettingEffect(this.Renderer,2048,2048)
+    InitEffect() {
+        if (this.Renderer)
+            this.Vignetting = new VignettingEffect(this.Renderer, 2048, 2048)
     }
     InitCamera() {
         this.Camera.position.set(0, 0, -40)
@@ -141,7 +145,10 @@ class Background {
         z: number = 0
     ): THREE.Mesh {
         const boxGeometry = new THREE.BoxBufferGeometry(2, 2, 2, 2, 2, 2)
-        const basicMateral = new THREE.MeshStandardMaterial({ color: 0xffffff ,morphTargets:true})
+        const basicMateral = new THREE.MeshStandardMaterial({
+            color: 0xffffff,
+            morphTargets: true
+        })
         boxGeometry.morphAttributes.position = []
         var positions = boxGeometry.attributes.position.array
         var morphPositions = []
@@ -224,12 +231,9 @@ class Background {
     }
     public Render(dt: number) {
         if (this.Renderer) {
-            if(this.Vignetting)
-            {
-                this.Vignetting.render(this.Scene,this.Camera);
-            }
-            else
-            {
+            if (this.Vignetting) {
+                this.Vignetting.render(this.Scene, this.Camera)
+            } else {
                 this.Renderer.render(this.Scene, this.Camera)
             }
         }

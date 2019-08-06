@@ -1,6 +1,14 @@
+export interface StateEvents {
+    start: Function,
+    quit: Function
+}
 export module MStateMachine {
+    export type eventCallback = (...argv: any[]) => any
+    type StateConfig = StateEvents | { [key: string]: any }
+
     export class StateMachine {
         nowState: State | null = null;
+        States: State[] = []
         constructor(def?: State) {
             if (def)
                 this.changeState(def);
@@ -10,38 +18,64 @@ export module MStateMachine {
             this.nowState = ns;
             ns.emit('start');
         }
-        emit(event: string,...argv:any[]) {
-            if (this.nowState) this.nowState.emit(event,...argv);
+        emit(event: string, ...argv: any[]): any {
+            if (this.nowState) return this.nowState[event](...argv);
+        }
+        createState(conf?: StateConfig, name?: string) {
+            let state = new State(conf, name);
+            state.machine = this;
+            this.States.push(state);
+            return state;
         }
     }
+    function keyInObject<T extends any>(k: any, ob: T): k is keyof T {
+        return k in ob;
+    }
     export class State {
-        eventSave: { event: string, cbs: Function[] }[] = [];
-        public on(event: string, cb: (eventHandle: any,...argv:any[]) => void) {
-            const save = this.eventSave.find(v => v.event === event)
-            if (save) {
-                save.cbs.push(cb);
-            }
-            else {
-                this.eventSave.push({ event, cbs: [cb] });
-            }
-        }
-        public emit(event: string,...argv:any[]) {
-            const save = this.eventSave.find(v => v.event === event)
-            if (save) {
-                let handle = {};
-                save.cbs.forEach(cb => {
-                    cb(handle,...argv);
-                });
-            }
-        }
-        public off(event: string, cb: (eventHandle: any) => void) {
-            const save = this.eventSave.find(v => v.event === event);
-            if (save) {
-                const idx = save.cbs.findIndex(v => v === cb);
-                if (idx > -1) {
-                    save.cbs.splice(idx, 1);
+        [key: string]: any
+        name: string = ''
+        private static currentID: number = 0;
+        id: number = 0;
+        machine: StateMachine | null = null;
+        constructor(conf?: StateConfig, name: string = '') {
+            this.name = name;
+            this.id = State.currentID++;
+            if (conf) {
+                for (let key in conf) {
+                    if (keyInObject(key, conf)) {
+                        let value = conf[key];
+                        this[key] = value;
+                    }
                 }
             }
+        }
+        public on(event: keyof StateEvents, cb: eventCallback): void
+        public on(event: string, cb: eventCallback): void
+        public on(event: string, cb: eventCallback) {
+            if (typeof cb === 'function') {
+                this[event] = cb;
+            }
+            else {
+                throw 'the second param of on function must be a Function'
+            }
+
+        }
+        public bind(event: keyof StateEvents, value: any): void
+        public bind(event: string, value: any): void
+        public bind(event: string, value: any) {
+            this[event] = value;
+        }
+        public emit(event: keyof StateEvents, eventHandle: any, ...argv: any[]): void
+        public emit(event: keyof StateEvents, ...argv: any[]): void
+        public emit(event: string, eventHandle: any, ...argv: any[]): void
+        public emit(event: string, ...argv: any[]): void
+        public emit(event: string, eventHandle: any = null, ...argv: any[]) {
+            if(this[event]&&typeof this[event] === 'function')this[event](eventHandle, ...argv);
+        }
+        public off(event: keyof StateEvents): void;
+        public off(event: string): void
+        public off(event: string) {
+            this[event] = null;
         }
     }
 }
