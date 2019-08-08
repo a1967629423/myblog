@@ -21,11 +21,39 @@ export module MStateMachine {
         emit(event: string, ...argv: any[]): any {
             if (this.nowState) return this.nowState[event](...argv);
         }
-        createState(conf?: StateConfig, name?: string) {
-            let state = new State(conf, name);
+        createState(name?:string):State;
+        createState(conf?:StateConfig,name?:string):State;
+        createState(conf?: StateConfig|string, name?: string):State
+        createState(conf?: StateConfig|string, name?: string) {
+            let state:State
+            if(conf!==undefined)
+            {
+                if(typeof conf === 'string')
+                {
+                   state = new State({}, conf);
+                }
+                else
+                {
+                    state = new State(conf,name);
+                }
+            }
+            else
+            {
+                state = new State();
+            }
+            
             state.machine = this;
             this.States.push(state);
             return state;
+        }
+        createStateAsDefault(name?:string):State
+        createStateAsDefault(conf?:StateConfig,name?:string):State
+        createStateAsDefault(conf?:StateConfig|string,name?:string):State
+        createStateAsDefault(conf?:StateConfig|string,name?:string)
+        {
+            let state = this.createState(conf,name)
+            this.changeState(state);
+            return state
         }
     }
     function keyInObject<T extends any>(k: any, ob: T): k is keyof T {

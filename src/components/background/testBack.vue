@@ -14,78 +14,8 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator'
 import * as THREE from 'three'
-import { MStateMachine, StateEvents } from '../../utile/StateMachine'
-import { VignettingEffect } from '../../assets/shader/Vignetting'
-import {ParticleSystem} from '../../assets/shader/ParticleSystem'
-const { State, StateMachine } = MStateMachine
-declare module '../../utile/StateMachine' {
-    export interface StateEvents {
-        update: Function
-    }
-}
-class PopBox {
-    public BoxMesh: THREE.Mesh
-
-    public SM = new StateMachine()
-    public upState = this.SM.createState('upState')
-    public downState = this.SM.createState('downState')
-    public bottom_idleState = this.SM.createStateAsDefault('bottom_idle')
-    public top_idleState = this.SM.createState('top_idle')
-    time: number = Math.random() * Math.PI * 2
-    Rx: number = Math.random() * 0.9 + 0.1
-    Ry: number = Math.random() * 0.9 + 0.1
-    Rz: number = Math.random() * 0.9 + 0.1
-    timestep: number = Math.random() * 0.9 + 0.1
-    constructor(mesh: THREE.Mesh) {
-        this.BoxMesh = mesh
-        this.upState.on('update', (dt: number) => {
-            this.BoxMesh.position.z -= dt * 2
-            if (this.BoxMesh.position.z <= -2) {
-                this.BoxMesh.position.z = -2
-                this.SM.changeState(this.top_idleState)
-            }
-        })
-        this.downState.on('update', (dt: number) => {
-            this.BoxMesh.position.z += dt * 2
-            if (this.BoxMesh.position.z >= 0) {
-                this.BoxMesh.position.z = 0
-                this.SM.changeState(this.bottom_idleState)
-            }
-        })
-        this.top_idleState.on('start', () => {
-            setTimeout(() => {
-                this.SM.changeState(this.downState)
-            }, 500)
-        })
-        this.BoxMesh.rotation.set(
-            Math.random() * 2 - 1,
-            Math.random() * 2 - 1,
-            Math.random() * 2 - 1
-        )
-    }
-    switchState() {
-        if (this.SM.nowState === this.bottom_idleState) {
-            this.SM.changeState(this.upState)
-        }
-    }
-
-    update(dt: number) {
-        //this.SM.emit('update', dt)
-        if (
-            this.BoxMesh.morphTargetInfluences &&
-            this.BoxMesh.morphTargetInfluences.length > 0
-        ) {
-            this.BoxMesh.morphTargetInfluences[0] =
-                ((Math.sin(this.time) + 1) / 2) * 0.92 + 0.08
-        }
-        this.time += dt * this.timestep
-        this.BoxMesh.rotateX(dt * this.Rx)
-        this.BoxMesh.rotateY(dt * this.Ry)
-        this.BoxMesh.rotateZ(dt * this.Rz)
-    }
-}
-class Background {
-    constructor(canvas: HTMLCanvasElement) {
+class Background{
+   constructor(canvas: HTMLCanvasElement) {
         this.Canvas = canvas
         this.Init()
     }
@@ -97,9 +27,6 @@ class Background {
     Canvas: HTMLCanvasElement
     // LinesCtrl
     CtrlOne: THREE.Object3D | null = null
-    Boxs: PopBox[] = []
-    Vignetting: VignettingEffect | null = null
-    PSystem:ParticleSystem | null =null;
     FrameFunc: (dt: DOMHighResTimeStamp) => void = this.Frame.bind(this)
     Init() {
         this.InitCamera()
@@ -123,11 +50,9 @@ class Background {
         // }, 1000)
     }
     InitEffect() {
-        if (this.Renderer)
-            this.Vignetting = new VignettingEffect(this.Renderer, window.innerWidth*2, window.innerHeight*2)
     }
     InitCamera() {
-        this.Camera.position.set(0, 0, -40)
+        this.Camera.position.set(0, 0, -1)
         this.Camera.lookAt(0, 0, 0)
         this.Scene.add(this.Camera)
     }
@@ -219,45 +144,18 @@ class Background {
         // }
     }
     InitObject() {
-        const AllCtrl = new THREE.Group()
-        for (let i = 0; i <= 40; i++) {
-            const l = Math.random() * 20 + 20
-            const r = Math.random() * 2 * Math.PI
-            const x = Math.cos(r) * l
-            const z = Math.sin(r) * l
-            const y = Math.random() * 20 - 10
-            const popBox = new PopBox(Background.GenerateBox(x, y, z))
-            AllCtrl.add(popBox.BoxMesh)
-            this.Boxs.push(popBox)
-        }
-        this.CtrlOne = AllCtrl
-        this.Scene.add(AllCtrl)
-        var system = new ParticleSystem();
-        this.PSystem = system;
-        var cp = this.Camera.position;
-        system.position.set(cp.x,cp.y,cp.z+1);
-        this.Scene.add(system);
+        let testGeometry = new THREE.BufferGeometry();
+        testGeometry.addAttribute('position',new THREE.BufferAttribute(new Float32Array([0,0,0]),3))
+        this.Scene.add(new THREE.Points(testGeometry,new THREE.PointsMaterial({size:1,transparent:true,color:0xd5bca1})))
     }
     public Render(dt: number) {
         if (this.Renderer) {
-            if (this.Vignetting) {
-                this.Vignetting.render(this.Scene, this.Camera)
-            } else {
-                this.Renderer.render(this.Scene, this.Camera)
-            }
+             this.Renderer.render(this.Scene, this.Camera)
         }
     }
     public Logic(dt: number) {
-        this.Boxs.forEach(box => {
-            box.update(dt)
-        })
         if (this.CtrlOne) {
             this.CtrlOne.rotateY(dt / 10)
-        }
-        if(this.PSystem)
-        {
-            this.PSystem.spawnParticle();
-            this.PSystem.update(dt);
         }
     }
     public Frame(stamp: DOMHighResTimeStamp) {
@@ -268,8 +166,8 @@ class Background {
         requestAnimationFrame(this.FrameFunc)
     }
 }
-@Component({ name: 'CubeLoop' })
-export default class CubeLoop extends Vue {
+@Component({ name: 'testBack' })
+export default class testBack extends Vue {
     public mounted() {
         const showCanvas = this.$refs.showCanvas
         if (showCanvas instanceof HTMLCanvasElement) {
@@ -278,4 +176,3 @@ export default class CubeLoop extends Vue {
     }
 }
 </script>
-
