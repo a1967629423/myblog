@@ -1,23 +1,35 @@
 <template>
     <div class="index-content">
+        <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
         <CubeLoop></CubeLoop>
         <div class="index-head">
             <div class="index-head-text">
                 Welcome
             </div>
         </div>
-        <div class="index-zuo">
-        <a href=""><img src="../assets/images/icon/zuo.png"></a>
+        <div class="index-arrowfather">
+        <div class="index-arrow" id="arrow1">
+        <a class="index-d1" href="#"><i class="fa fa-angle-double-right fa-3x" ></i></a>
+        </div>
         </div>
     </div>
 </template>
 <style lang="scss">
+.index-arrowfather{
+    position: relative;
+    .index-d1{
+        color: rgb(128, 123, 123);
+    }
+    .index-arrow{
+        left:95%;
+        position: fixed;
+        top: 50%;
+    }
+
+}
 .index-content
 {
     text-align: center;
-    .index-zuo{
-        left:100%;
-    }
     .index-head
     {
         position: absolute;
