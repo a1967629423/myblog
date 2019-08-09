@@ -79,6 +79,6 @@ export class VignettingEffect {
         }
     }
     setSize(width: number, height: number): void {
-
+        this.renderTaget.setSize(width,height);
     }
 }

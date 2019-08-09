@@ -53,7 +53,8 @@
 <script lang="ts">
 import {Vue,Component} from 'vue-property-decorator'
 import CubeLoop from '../components/background/CubeLoop.vue'
-@Component({components:{CubeLoop}})
+import testBack from '../components/background/testBack.vue'
+@Component({components:{CubeLoop,testBack}})
 export default class Index extends Vue
 {
 
