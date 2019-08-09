@@ -339,11 +339,10 @@ export class GPUParticleContainer extends THREE.Object3D
      */
     allocParticle(count:number,life:number):{offset:number,allocateCount:number}
     {
-        let blockidx = 0;
-        let block = this.particlePool.find((v,idx)=>{if(v.offset>this.particleCursor){blockidx = idx;return true}return false});
+        //let block = this.particlePool.length>0?this.particlePool[this.particlePool.length-1]:null;
         let offset = this.particleCursor;
         let allocateCount = count;
-        if((block&&this.particleCursor+count>block.offset)||this.particleCursor+count>this.particleCount)
+        if(this.particleCursor+count>this.particleCount)
         {
             // let max = 0;
             // var i =1;
@@ -366,13 +365,13 @@ export class GPUParticleContainer extends THREE.Object3D
             // }
             this.particleCursor = 0;
             offset = this.particleCursor;
-            this.particlePool.push({start:this.time,offset,count,life});
+            //this.particlePool.push({start:this.time,offset,count,life});
             this.updatePool.push({offset:this.particleCursor*PARTICLE_DATA_OFFSET,count:count*PARTICLE_DATA_OFFSET});
             this.particleCursor+=count;
         }
         else
         {
-            this.particlePool.push({start:this.time,offset,count,life});
+            //this.particlePool.push({start:this.time,offset,count,life});
             this.updatePool.push({offset:this.particleCursor*PARTICLE_DATA_OFFSET,count:count*PARTICLE_DATA_OFFSET});
             this.particleCursor+=count;
         }
