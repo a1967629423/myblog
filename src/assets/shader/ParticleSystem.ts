@@ -23,14 +23,17 @@ var Shader = {
         {
             //calculate position
             vec3 startPosition = position;
-            vec4 noise = texture2D(tNoise,vec2((startPosition.x)*.015+uTime*.05,
-            (startPosition.y)*.015+uTime*.05));
-            vec3 noiseVel = (noise.rgb - .5)*30.;
             vec3 newPosition = startPosition + (pv*1.)*timeElapsed*.1;
+            vec4 noise = texture2D(tNoise,vec2((newPosition.x)*.015+uTime*.05,
+            (newPosition.y)*.015+uTime*.05));
+            vec3 noiseVel = (noise.rgb - .5)*30.;
+            
             newPosition = mix(newPosition,newPosition+noiseVel*(pslt.z*.5),1.-lifeLeft);
             //calculate scale
             vec4 mvPosition = modelViewMatrix * vec4(newPosition,1.);
-            gl_PointSize = uScale * pslt.x;
+            gl_PointSize = pslt.x;
+            bool isPerspective = ( projectionMatrix[ 2 ][ 3 ] == - 1.0 );
+            if ( isPerspective ) gl_PointSize *=( uScale / - mvPosition.z );
             gl_Position = projectionMatrix * mvPosition;
         }
         else
@@ -45,33 +48,43 @@ var Shader = {
     varying float lifeLeft;
     void main()
     {
-        vec2 cUV = gl_PointCoord * 2. - 1.;
-        vec4 color = vColor;
-        color.a *= smoothstep(0.,1.,1.-sqrt(cUV.x*cUV.x + cUV.y*cUV.y)) * lifeLeft;
-        gl_FragColor = color;
+        if(lifeLeft>0.)
+        {
+            vec2 cUV = gl_PointCoord * 2. - 1.;
+            vec4 color = vColor;
+            color.a *= smoothstep(0.,1.,1.-sqrt(cUV.x*cUV.x + cUV.y*cUV.y)) * lifeLeft;
+            gl_FragColor = color;
+        }
+        else
+        {
+            discard;
+        }
     }
     `
 }
+
+var noiseMap = <any>(new THREE.ImageLoader()).load(noiseUrl);
+noiseMap['wrapS'] = noiseMap['wrapT'] = THREE.RepeatWrapping;
 var ParticleMaterial:THREE.ShaderMaterial = new THREE.ShaderMaterial({
     vertexShader:Shader.vs,
     fragmentShader:Shader.fs,
-    uniforms:{uTime:{value:0.0},uScale:{value:1.0},tNoise:{value:null}},
-    transparent:true
+    uniforms:{uTime:{value:0.0},uScale:{value:1.0},tNoise:{value:noiseMap}},
+    transparent:true,
+    depthWrite:false
 });
-(new THREE.ImageLoader()).load(noiseUrl,img=>{
-    ParticleMaterial.uniforms.tNoise.value = img;  
-});
+
 interface spawnOption{
     position?:THREE.Vector3,
     velocity?:THREE.Vector3,
-    positionRandomness?:number,
+    positionRandomness?:THREE.Vector3,
     color?:number,
-    colorRandomness?:number,
+    colorRandomness?:THREE.Vector3,
     turbulence?:number,
     lifetime?:number,
     size?:number,
     sizeRandomness?:number,
-    count?:number
+    count?:number,
+    scale?:number
 }
 function mix<T>(s:T,t:T):Required<T>
 {
@@ -96,18 +109,20 @@ var random = (function(){
     }})();
 export  class ParticleSystem extends THREE.Object3D
 {
-    private static defaultSpawnOption:spawnOption = {
+    static defaultSpawnOption:Required<spawnOption>  = {
         position:new THREE.Vector3(0,0,0),
         velocity:new THREE.Vector3(0.2,0.2,0.4),
-        positionRandomness:20,
+        positionRandomness:new THREE.Vector3(20,20,20),
         color:0x4e72b8,
-        colorRandomness:0.2,
+        colorRandomness:new THREE.Vector3(0.2,0.2,0.2),
         turbulence:0.5,
         lifetime:3.0,
         size:30.0,
         sizeRandomness:0.2,
-        count:1
+        count:1,
+        scale:40
     }
+    private  _defaultSpawnOption:Required<spawnOption> = ParticleSystem.defaultSpawnOption
     particleMaxCount = 1e6;
     particlCursor = 0;
     containerCount:number = 1;
@@ -132,9 +147,21 @@ export  class ParticleSystem extends THREE.Object3D
     }
     spawnParticle(option?:spawnOption)
     {
-        let op:spawnOption = option?option:{};
-        this.containerPool[this.particlCursor].spawnParticle(mix(op,ParticleSystem.defaultSpawnOption));
+        if(option)
+        {
+            this.containerPool[this.particlCursor].spawnParticle(mix(option,this._defaultSpawnOption));
+            
+        }
+        else
+        {
+            this.containerPool[this.particlCursor].spawnParticle(this._defaultSpawnOption);
+        }
         this.particlCursor = ++this.particlCursor%this.containerCount;
+    }
+    setSpawnConf(option?:spawnOption)
+    {
+        let op:spawnOption = option?option:{};
+        this._defaultSpawnOption = mix(op,ParticleSystem.defaultSpawnOption)
     }
 }
 var PARTICLE_DATA_OFFSET:number = 14;
@@ -154,7 +181,7 @@ export class GPUParticleContainer extends THREE.Object3D
     particleSystem:THREE.Points;
     particleMaterial:THREE.ShaderMaterial;
     
-    constructor(particleSystem:ParticleSystem,maxParticle:number = 1e5)
+    constructor(particleSystem:ParticleSystem,maxParticle:number = 1e4)
     {
         super();
         this.particleCount = maxParticle;
@@ -260,25 +287,29 @@ export class GPUParticleContainer extends THREE.Object3D
             //set ppst
             let v3 = i*3;
             let v4 = i*4;
-            position[v3] = option.position.x + (random()*option.positionRandomness*2);
-            position[v3+1] =  option.position.y + (random()*option.positionRandomness*2);
-            position[v3+2] = option.position.z + (random()*option.positionRandomness*2);
+            position[v3] = option.position.x + (random()*option.positionRandomness.x);
+            position[v3+1] =  option.position.y + (random()*option.positionRandomness.y);
+            position[v3+2] = option.position.z + (random()*option.positionRandomness.z);
             stime[i] = this.time;
             //set pslt
             pslt[v3] = option.size + (random()*option.sizeRandomness);
             pslt[v3+1] = option.lifetime;
             pslt[v3+2] = option.turbulence;
             //set pc
-            pc[v4] = r*(random()*option.colorRandomness);
-            pc[v4+1] = g*(random()*option.colorRandomness);
-            pc[v4+2] = b*(random()*option.colorRandomness);
+            pc[v4] = r*(random()*option.colorRandomness.x);
+            pc[v4+1] = g*(random()*option.colorRandomness.y);
+            pc[v4+2] = b*(random()*option.colorRandomness.z);
             pc[v4+3] = 1;
             //set pv
             pv[v3] = option.velocity.x;
             pv[v3+1] = option.velocity.y;
             pv[v3+2] = option.velocity.z;
         }
-        // debugger;
+        if(option.scale!==this.particleMaterial.uniforms.uScale.value)
+        {
+            this.particleMaterial.uniforms.uScale.value = option.scale;
+            this.particleMaterial.needsUpdate = true;
+        }
         // this.interleaveBuffer.set(allocArray,offset*PARTICLE_DATA_OFFSET);
         this.particleNeedUpdate = true;
     }
@@ -312,7 +343,6 @@ export class GPUParticleContainer extends THREE.Object3D
         let block = this.particlePool.find((v,idx)=>{if(v.offset>this.particleCursor){blockidx = idx;return true}return false});
         let offset = this.particleCursor;
         let allocateCount = count;
-        debugger;
         if((block&&this.particleCursor+count>block.offset)||this.particleCursor+count>this.particleCount)
         {
             // let max = 0;
@@ -357,11 +387,12 @@ export class GPUParticleContainer extends THREE.Object3D
             v = this.particlePool[i];
             if(this.time-v.start>v.life)
             {
-                this.releaseParticle(v.offset,v.count);
+                //this.releaseParticle(v.offset,v.count);
                 this.particlePool.splice(i,1);
             }
-            this.particlePool.sort((a,b)=>a.offset-b.offset);
+            
         }
+        this.particlePool.sort((a,b)=>a.offset-b.offset);
     }
     update(dt:number)
     {
@@ -378,17 +409,18 @@ export class GPUParticleContainer extends THREE.Object3D
             if(this.updatePool.length>0)
             {
                 this.updatePool.sort((a,b)=>a.offset-b.offset);
-            //     let endblock = this.updatePool[this.updatePool.length-1]
-            //     let begin = this.updatePool[0].offset;
-            //     let end = endblock.offset+endblock.count;
+                let endblock = this.updatePool[this.updatePool.length-1]
+                let begin = this.updatePool[0].offset;
+                let end = endblock.offset+endblock.count;
             //     this.interleaveBuffer.updateRange.offset = begin;
             //     this.interleaveBuffer.updateRange.count = end - begin;
                 this.updatePool.length = 0;
                 for(var item in this.gemotery.attributes)
                 {
-
-
-                    (<THREE.BufferAttribute>this.gemotery.attributes[item]).needsUpdate = true;
+                    let attribute = <THREE.BufferAttribute>this.gemotery.attributes[item];
+                    attribute.updateRange.offset = begin * attribute.itemSize;
+                    attribute.updateRange.count = (end-begin)*attribute.itemSize;
+                    attribute.needsUpdate = true;
 
                 }
             }

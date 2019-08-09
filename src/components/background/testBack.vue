@@ -146,7 +146,7 @@ class Background{
     InitObject() {
         let testGeometry = new THREE.BufferGeometry();
         testGeometry.addAttribute('position',new THREE.BufferAttribute(new Float32Array([0,0,0]),3))
-        this.Scene.add(new THREE.Points(testGeometry,new THREE.PointsMaterial({size:1,transparent:true,color:0xd5bca1})))
+        this.Scene.add(new THREE.Points(testGeometry,new THREE.PointsMaterial({size:10,transparent:true,color:0xd5bca1})))
     }
     public Render(dt: number) {
         if (this.Renderer) {

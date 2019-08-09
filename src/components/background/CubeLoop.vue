@@ -142,6 +142,10 @@ class Background {
                 window.innerHeight / 2
             ]
         }
+        if(this.Vignetting)
+        {
+            this.Vignetting.setSize(window.innerWidth*2,window.innerHeight*2);
+        }
     }
     static GenerateBox(
         x: number = 0,
@@ -235,7 +239,8 @@ class Background {
         var system = new ParticleSystem();
         this.PSystem = system;
         var cp = this.Camera.position;
-        system.position.set(cp.x,cp.y,cp.z+1);
+        system.position.set(cp.x,cp.y,cp.z+3);
+        system.setSpawnConf({velocity:new THREE.Vector3(1,-30,1),positionRandomness:new THREE.Vector3(40,0,20),position:new THREE.Vector3(-15,12,0),lifetime:4,scale:30})
         this.Scene.add(system);
     }
     public Render(dt: number) {
