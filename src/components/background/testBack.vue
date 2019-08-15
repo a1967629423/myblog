@@ -14,6 +14,15 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator'
 import * as THREE from 'three'
+import {SeaMesh} from '../../assets/shader/objects/sea'
+import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls'
+var floorTex = require('../../assets/images/texture/hardwood2_diffuse.jpg');
+var skyBox_px = require('../../assets/images/texture/cube/skyboxsun25deg/px.jpg');
+var skyBox_nx = require('../../assets/images/texture/cube/skyboxsun25deg/nx.jpg');
+var skyBox_py = require('../../assets/images/texture/cube/skyboxsun25deg/py.jpg');
+var skyBox_ny = require('../../assets/images/texture/cube/skyboxsun25deg/ny.jpg');
+var skyBox_pz = require('../../assets/images/texture/cube/skyboxsun25deg/pz.jpg');
+var skyBox_nz = require('../../assets/images/texture/cube/skyboxsun25deg/nz.jpg');
 class Background{
    constructor(canvas: HTMLCanvasElement) {
         this.Canvas = canvas
@@ -27,6 +36,7 @@ class Background{
     Canvas: HTMLCanvasElement
     // LinesCtrl
     CtrlOne: THREE.Object3D | null = null
+    ctrl:OrbitControls|null = null;
     FrameFunc: (dt: DOMHighResTimeStamp) => void = this.Frame.bind(this)
     Init() {
         this.InitCamera()
@@ -39,6 +49,7 @@ class Background{
         requestAnimationFrame(this.FrameFunc)
         addEventListener('resize', this.SetCameraAndRenderer.bind(this))
         this.SetCameraAndRenderer()
+        this.ctrl = new OrbitControls(this.Camera,this.Canvas);
         // setInterval(() => {
         //     for (let i = 0; i < 10; i++) {
         //         let randidx = Math.floor(Math.random() * this.Boxs.length)
@@ -52,7 +63,7 @@ class Background{
     InitEffect() {
     }
     InitCamera() {
-        this.Camera.position.set(0, 0, -1)
+        this.Camera.position.set(0, 10, -30)
         this.Camera.lookAt(0, 0, 0)
         this.Scene.add(this.Camera)
     }
@@ -144,9 +155,37 @@ class Background{
         // }
     }
     InitObject() {
-        let testGeometry = new THREE.BufferGeometry();
-        testGeometry.addAttribute('position',new THREE.BufferAttribute(new Float32Array([0,0,0]),3))
-        this.Scene.add(new THREE.Points(testGeometry,new THREE.PointsMaterial({size:10,transparent:true,color:0xd5bca1})))
+        // let testGeometry = new THREE.BufferGeometry();
+        // testGeometry.addAttribute('position',new THREE.BufferAttribute(new Float32Array([0,0,0]),3))
+        // this.Scene.add(new THREE.Points(testGeometry,new THREE.PointsMaterial({size:10,transparent:true,color:0xd5bca1})))
+        let waterGeometry = new THREE.PlaneBufferGeometry(20,20,20,20);
+        let water = new SeaMesh(waterGeometry);
+        water.position.y = 1;
+        water.rotation.x = Math.PI * - 0.5;
+        this.Scene.add(water);
+        let BoxGeometry = new THREE.BoxBufferGeometry(2,2,2);
+        let BasicMateral = new THREE.MeshBasicMaterial({color:0xd392f1});
+        let box = new THREE.Mesh(BoxGeometry,BasicMateral);
+        box.position.y = -1;
+        this.Scene.add(box);
+        let floorGeometry = new THREE.PlaneBufferGeometry(15,15);
+        let floorMaterial = new THREE.MeshStandardMaterial({roughness:0.8,metalness:0.4})
+        let floorMesh = new THREE.Mesh(floorGeometry,floorMaterial);
+        floorMesh.position.y = -1;
+        floorMesh.rotation.x = -0.4*Math.PI;
+        (new THREE.TextureLoader()).load(floorTex,(tex)=>{
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            tex.anisotropy = 14;
+            floorMaterial.map = tex;
+            floorMaterial.needsUpdate = true;
+        });
+        (new THREE.CubeTextureLoader()).load([skyBox_px,skyBox_nx,skyBox_py,skyBox_ny,skyBox_pz,skyBox_nz],(tex)=>{
+            this.Scene.background = tex;
+            floorMaterial.envMap = tex;
+            floorMaterial.needsUpdate = true;
+        })
+        this.Scene.add(floorMesh);
     }
     public Render(dt: number) {
         if (this.Renderer) {

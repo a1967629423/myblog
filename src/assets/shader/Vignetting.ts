@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+var _Math = THREE.Math;
 var Shader = {
     vs: `
     varying vec2 vUv;
@@ -49,6 +50,10 @@ export class VignettingEffect {
                 }
             }
         });
+        if(!_Math.isPowerOfTwo(width)||!_Math.isPowerOfTwo(height))
+        {
+            this.renderTaget.texture.generateMipmaps = false;
+        }
         this.mesh = new THREE.Mesh(new THREE.PlaneGeometry(2,2),this.material);
         this.scene.add(this.mesh);
     }
@@ -80,5 +85,10 @@ export class VignettingEffect {
     }
     setSize(width: number, height: number): void {
         this.renderTaget.setSize(width,height);
+        if(!_Math.isPowerOfTwo(width)||!_Math.isPowerOfTwo(height))
+        {
+            this.renderTaget.texture.generateMipmaps = false;
+        }
+    
     }
 }
