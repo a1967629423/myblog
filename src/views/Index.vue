@@ -5,7 +5,13 @@
             href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
             rel="stylesheet"
         /> <CubeLoop></CubeLoop>
-       <card></card>
+        <div class="card-container">
+            <card></card>
+            <card></card>
+            <card></card>
+            <card></card>
+        </div>
+       
         <div class="index-head">
             <div class="index-head-text">Welcome</div>
         </div>
@@ -20,17 +26,24 @@
 </template>
 <style lang="scss">
 .index-arrowfather {
-    position: relative;
-    height: 100vh;
+    position: absolute;
+    width: 100%;
     .index-d1 {
         color: rgb(128, 123, 123);
     }
     .index-arrow {
         right: 30px;
         position: absolute;
-        top: 50%;
+        top: 50vh;
         transform: translate(-50%, -50%);
     }
+}
+.card-container
+{
+    display: flex;
+    position: absolute;
+    width: 100%;
+    justify-content: center;
 }
 .index-content {
     text-align: center;
