@@ -32,10 +32,10 @@ export default new Router({
       name: '404',
       component: res=>require(['./views/404Page.vue'],(comp)=>{res(comp)}),
     },
-    // {
-    //   path:'/card',
-    //   name:'car',
-    //   component:()=>import('./components/Card.modul.vue')
-    // },
+    {
+      path:'/card',
+      name:'car',
+      component:()=>import('./components/Card.modul.vue')
+    },
   ],
 });
