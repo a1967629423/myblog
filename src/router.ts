@@ -22,6 +22,12 @@ export default new Router({
       component: () => import(/* webpackChunkName: "about" */ './views/About.vue'),
     },
     {
+      path:'/test',
+      name:'test',
+      component:res=>require(['./components/background/testBack.vue'],(comp)=>{res(comp)})
+    }
+    ,
+    {
       path: '*',
       name: '404',
       component: res=>require(['./views/404Page.vue'],(comp)=>{res(comp)}),
